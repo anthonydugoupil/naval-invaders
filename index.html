@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b3d91">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Naval Invaders</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #041020;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Courier New', monospace;
+    color: #d8c9a3;
+    height: 100%;
+    overflow: hidden;
+  }
+  #hud {
+    display: flex;
+    justify-content: space-between;
+    width: 800px;
+    max-width: 100vw;
+    box-sizing: border-box;
+    padding: 10px 5px;
+    font-size: 20px;
+    letter-spacing: 1px;
+  }
+  canvas {
+    background: #0b3d91; /* fond bleu */
+    display: block;
+    border: 3px solid #3a2a1a;
+    max-width: 100vw;
+    max-height: 55vh;
+    width: auto;
+    height: auto;
+    touch-action: none; /* évite le défilement/zoom quand on joue au doigt sur le canvas */
+  }
+  #overlay, #startScreen {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -35px);
+    text-align: center;
+    background: rgba(4, 16, 32, 1);
+    padding: 18px 20px 10px;
+    min-width: 344px;
+    border: 2px solid transparent;
+    border-image: linear-gradient(to bottom, #f5f5f5 0%, #b0b0b0 40%, #5a5a5a 100%) 1;
+    max-height: 92vh;
+    overflow-y: auto;
+    z-index: 20;
+    box-sizing: border-box;
+  }
+  #startScreen p {
+    margin: 8px 0;
+  }
+  #startScreen button {
+    margin-top: 8px;
+    padding: 8px 20px;
+  }
+  #overlay {
+    display: none;
+    border-image: linear-gradient(to bottom, #b31212 0%, #b31212 45%, #ff5a3b 100%) 1;
+  }
+  #overlay h1 {
+    font-family: 'Arial Black', Impact, sans-serif;
+    font-style: italic;
+    font-weight: 900;
+    font-size: 34px;
+    letter-spacing: 1px;
+    background: linear-gradient(to bottom, #ffffff 0%, #b31212 45%, #ff5a3b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transform: skewX(-7.5deg);
+    text-shadow: 3px 3px 0 #4a0a0a;
+    margin-bottom: 10px;
+  }
+  #overlay p, #startScreen p {
+    max-width: 380px;
+  }
+  #startScreen p {
+    max-width: 300px;
+  }
+  #overlay button, #startScreen button {
+    display: block;
+    width: 260px;
+    box-sizing: border-box;
+    margin: 12px auto 0;
+    padding: 10px 20px;
+    font-family: inherit;
+    font-size: 16px;
+    background: #6b4226;
+    color: #f2e3c6;
+    border: 2px solid transparent;
+    border-image: linear-gradient(to bottom, #f5f5f5 0%, #b0b0b0 40%, #5a5a5a 100%) 1;
+    cursor: pointer;
+  }
+  #startScreen #startBtn {
+    margin-top: 44px;
+  }
+  #overlay #mainMenuBtn {
+    margin-bottom: 44px;
+  }
+  #overlay button:hover, #startScreen button:hover {
+    background: #8a5a35;
+  }
+  #wrapper {
+    position: relative;
+  }
+  .logo-naval {
+    font-family: 'Arial Black', Impact, sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: #b0b0b0;
+    background: linear-gradient(to bottom, #f5f5f5 0%, #b0b0b0 40%, #5a5a5a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 0.95;
+    margin-top: 22px;
+  }
+  .logo-invaders {
+    font-family: 'Arial Black', Impact, sans-serif;
+    font-style: italic;
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: #ff3b3b;
+    background: linear-gradient(to bottom, #ffffff 0%, #b31212 45%, #ff5a3b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transform: skewX(-7.5deg);
+    text-shadow: 3px 3px 0 #4a0a0a;
+    margin-top: -4px;
+    margin-bottom: 22px;
+  }
+  #instructions {
+    width: 800px;
+    max-width: 100vw;
+    text-align: center;
+    font-size: 13px;
+    opacity: 0.7;
+    margin-top: 8px;
+  }
+  #touchControls {
+    display: none; /* n'apparaît que sur les appareils tactiles, voir media query plus bas */
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 800px;
+    padding: 12px 20px;
+    box-sizing: border-box;
+  }
+  #touchMainRow {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 22px; /* descend la rangée d'une ligne */
+  }
+  #touchFireGroup {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-top: 75px; /* la croix rejoint l'ancienne ligne de la flamme */
+  }
+  #touchFireGroup .touch-btn:first-child {
+    margin-top: 32px; /* la flamme passe une demi-ligne sous le bouton croix */
+  }
+  #touchSystemRow {
+    display: flex;
+    gap: 16px;
+    position: fixed;
+    left: 50%;
+    bottom: 52px;
+    transform: translateX(-50%);
+  }
+  .mini-btn {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid #d8c9a3;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    margin: 0 2px;
+    font-size: 10px;
+  }
+  .mini-triangle {
+    width: 0;
+    height: 0;
+  }
+  .mini-triangle.left {
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #d8c9a3;
+    transform: translateX(-1.33px);
+  }
+  .mini-triangle.right {
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-left: 6px solid #d8c9a3;
+    transform: translateX(1.33px);
+  }
+  .mini-pill {
+    display: inline-flex;
+    width: 42px;
+    height: 16px;
+    border-radius: 8px;
+    border: 1px solid #d8c9a3;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    margin: 0 2px;
+    font-size: 8px;
+  }
+  .touch-pill {
+    width: 72px;
+    height: 28px;
+    border-radius: 14px;
+    background: rgba(216, 201, 163, 0.15);
+    border: 2px solid #d8c9a3;
+    color: #d8c9a3;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .touch-pill:active {
+    background: rgba(216, 201, 163, 0.4);
+  }
+  #touchControls .touch-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(216, 201, 163, 0.15);
+    border: 2px solid #d8c9a3;
+    color: #d8c9a3;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .touch-triangle {
+    width: 0;
+    height: 0;
+    /* le centrage flex centre la boîte englobante du triangle (18x24), mais le vrai centre
+       géométrique (circoncentre, intersection des médiatrices des 3 côtés) est décalé de 4px
+       vers la base par rapport au centre de cette boîte — on corrige ce décalage ci-dessous */
+  }
+  .touch-triangle.left {
+    border-top: 12px solid transparent;
+    border-bottom: 12px solid transparent;
+    border-right: 18px solid #d8c9a3;
+    transform: translateX(-4px);
+  }
+  .touch-triangle.right {
+    border-top: 12px solid transparent;
+    border-bottom: 12px solid transparent;
+    border-left: 18px solid #d8c9a3;
+    transform: translateX(4px);
+  }
+  #touchControls .touch-btn:active {
+    background: rgba(216, 201, 163, 0.4);
+  }
+  #touchMove {
+    display: flex;
+    gap: 16px;
+    margin-top: 43px; /* descend le bloc jusqu'à la ligne actuelle de la flamme */
+  }
+  #rotateWarning {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #041020;
+    color: #d8c9a3;
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+    box-sizing: border-box;
+    font-size: 18px;
+  }
+  @media (pointer: coarse) {
+    #touchControls {
+      display: flex;
+    }
+    #instructions {
+      display: none;
+    }
+    canvas {
+      max-height: 48vh;
+    }
+    .logo-naval {
+      font-size: 32px;
+    }
+    .logo-invaders {
+      font-size: 22px;
+      margin-bottom: 30px;
+    }
+    #overlay, #startScreen {
+      padding: 10px 15px 6px;
+      min-width: 334px;
+    }
+    #startScreen p {
+      font-size: 12px;
+      margin: 4px 0;
+    }
+    #overlay button, #startScreen button {
+      margin-top: 6px;
+      padding: 6px 16px;
+    }
+  }
+  @media (pointer: coarse) and (orientation: landscape) {
+    #rotateWarning {
+      display: flex;
+    }
+    #wrapper, #hud, #instructions, #touchControls {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <span>SCORE: <span id="score">0</span></span>
+  <span id="lives"></span>
+  <span>LVL: <span id="wave">1</span></span>
+</div>
+
+<div id="rotateWarning">
+  <p>Merci de tenir votre téléphone en position verticale pour jouer.</p>
+</div>
+<div id="wrapper">
+  <canvas id="game" width="800" height="600"></canvas>
+  <div id="overlay">
+    <h1 id="overlayTitle">GAME OVER</h1>
+    <p id="overlayScore"></p>
+    <button id="restartBtn">Rejouer</button>
+    <button id="mainMenuBtn">Menu principal</button>
+  </div>
+  <div id="startScreen">
+    <div class="logo-naval">NAVAL</div>
+    <div class="logo-invaders">INVADERS</div>
+    <p>Défendez la côte face aux vagues de bateaux.</p>
+    <p id="commandsStart" style="margin-top: 22px;"><span class="mini-btn"><span class="mini-triangle left"></span></span><span class="mini-btn"><span class="mini-triangle right"></span></span> : se déplacer</p>
+    <p><span class="mini-btn">🔥</span> : tir principal</p>
+    <p><svg width="20" height="20" viewBox="0 0 20 20" style="vertical-align:middle;margin:0 2px;"><circle cx="10" cy="10" r="9" fill="none" stroke="#ffb020" stroke-width="1"/><circle cx="10" cy="10" r="5" fill="none" stroke="#ffb020" stroke-width="1"/><line x1="10" y1="1" x2="10" y2="19" stroke="#ffb020" stroke-width="1"/><line x1="1" y1="10" x2="19" y2="10" stroke="#ffb020" stroke-width="1"/><line x1="3.6" y1="3.6" x2="16.4" y2="16.4" stroke="#ffb020" stroke-width="1"/><line x1="16.4" y1="3.6" x2="3.6" y2="16.4" stroke="#ffb020" stroke-width="1"/></svg> : tir secondaire</p>
+    <p><span class="mini-pill">Select</span> : musique on/off</p>
+    <p><span class="mini-pill">Start</span> : pause</p>
+    <button id="startBtn">Jouer</button>
+    <button id="highScoreBtn">High Score</button>
+    <p id="highScoreText" style="display:none; margin: 6px 0 0 0; color: #f2c14e;"></p>
+    <button id="difficultyBtn">Difficulté : Normal</button>
+    <button id="quitBtn">Quitter</button>
+    <p style="margin-top: 32px; margin-bottom: 0; font-size: 12px; opacity: 0.7;">Crédits : Claude & Anthony du Goupil.</p>
+  </div>
+</div>
+
+<div id="instructions">← → ou Q/D pour se déplacer — ESPACE pour tirer — P pour pause — M pour couper/remettre la musique</div>
+
+<div id="touchControls">
+  <div id="touchMainRow">
+    <div id="touchMove">
+      <div class="touch-btn" id="touchLeft"><div class="touch-triangle left"></div></div>
+      <div class="touch-btn" id="touchRight"><div class="touch-triangle right"></div></div>
+    </div>
+    <div id="touchFireGroup">
+      <div class="touch-btn" id="touchFire">🔥</div>
+      <div class="touch-btn" id="touchFire2"><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="#ffb020" stroke-width="1.2"/><circle cx="14" cy="14" r="6" fill="none" stroke="#ffb020" stroke-width="1.2"/><line x1="14" y1="2" x2="14" y2="26" stroke="#ffb020" stroke-width="1.2"/><line x1="2" y1="14" x2="26" y2="14" stroke="#ffb020" stroke-width="1.2"/><line x1="5.8" y1="5.8" x2="22.2" y2="22.2" stroke="#ffb020" stroke-width="1.2"/><line x1="22.2" y1="5.8" x2="5.8" y2="22.2" stroke="#ffb020" stroke-width="1.2"/></svg></div>
+    </div>
+  </div>
+  <div id="touchSystemRow">
+    <div class="touch-pill" id="touchSelect">Select</div>
+    <div class="touch-pill" id="touchStart">Start</div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+const COLORS = {
+  bg: '#0b3d91',
+  player: '#6e6e6c',       // corps de l'hélicoptère : même gris (sombre) que les rochers
+  playerDark: '#2fb8c4',   // ancien marron foncé -> bleu turquoise
+  laser: '#ffe135',
+  enemyLaser: '#e8e8e8',
+  boatBlack: '#111111',
+  boatBlackDeck: '#2b2b2b',
+  boatRed: '#b3231c',
+  boatRedDeck: '#7a1712',
+  wreck: '#e8842e',
+  bonusBolt: '#3ddc97',
+  shield: '#6b4226',        // rochers émergeant de l'eau, désormais en marron
+  shore: '#e8c84e',         // liseré jaune du rivage (écran et blocs de pierre)
+  vegetation: '#1f4a1f',    // pixels de végétation vert foncé
+  net: '#ffb020',           // tir secondaire (filet), jaune orangé
+  text: '#d8c9a3'
+};
+
+// Ligne de rivage irrégulière en bas de l'écran (générée une fois, jagged mais fixe)
+const SHORE_BLOCK_WIDTH = 8; // même largeur que les blocs de protection (blockSize)
+const SHORE_SEGMENTS = Math.ceil(W / SHORE_BLOCK_WIDTH); // couvre toute la largeur sans vide
+const SHORE_JAGGED_POINTS = [];
+{
+  // Marche aléatoire plutôt que des valeurs indépendantes, pour lisser les écarts de hauteur entre bandes voisines
+  let h = 9;
+  for (let i = 0; i <= SHORE_SEGMENTS; i++) {
+    h += (Math.random() * 4 - 2);
+    h = Math.max(5, Math.min(14, h));
+    SHORE_JAGGED_POINTS.push(h);
+  }
+}
+// Quelques volumes de végétation non destructibles, sur la limite basse de la zone jaune (bord de l'écran)
+const SHORE_VEGETATION = [];
+{
+  const vegCellSize = 2;
+  const clusterCount = 8;
+  for (let c = 0; c < clusterCount; c++) {
+    const gridSize = Math.random() < 0.5 ? 3 : 4; // volume de 3x3 ou 4x4 pixels
+    const clusterSize = gridSize * vegCellSize;
+    const originX = Math.random() * (W - clusterSize);
+    const originY = H - clusterSize; // bord inférieur du volume aligné sur le bas de l'écran
+    const cells = [];
+    for (let r = 0; r < gridSize; r++) {
+      for (let col = 0; col < gridSize; col++) {
+        if (Math.random() < 0.6) { // touffe éparse plutôt qu'un carré plein
+          cells.push({ x: originX + col * vegCellSize, y: originY + r * vegCellSize });
+        }
+      }
+    }
+    SHORE_VEGETATION.push({ cells, size: vegCellSize });
+  }
+}
+
+// ---------- État du jeu ----------
+let score = 0;
+let lives = 3;
+let wave = 1;
+let gameOver = false;
+let paused = false;
+let gameRunning = false; // false tant qu'on est sur l'écran d'accueil ou le menu principal
+let highScore = 0;
+
+// Trois niveaux de difficulté : facile / normal (réglages actuels) / difficile
+const DIFFICULTY_ORDER = ['facile', 'normal', 'difficile'];
+const DIFFICULTY_LABELS = { facile: 'Facile', normal: 'Normal', difficile: 'Difficile' };
+const DIFFICULTY_SETTINGS = {
+  facile:    { speedMult: 0.75, shootCooldownMult: 1.4, startLives: 4 },
+  normal:    { speedMult: 1.0,  shootCooldownMult: 1.0, startLives: 3 }, // réglages actuels, inchangés
+  difficile: { speedMult: 1.4,  shootCooldownMult: 0.7, startLives: 2 }
+};
+let difficulty = 'normal';
+let animFrame = 0;
+let lastTimestamp = 0;
+let gameTime = 0; // secondes de jeu écoulées (hors pause), utilisé pour l'animation arc-en-ciel
+
+// Toutes les vitesses ci-dessous sont exprimées en px/seconde (basées sur le temps
+// réel écoulé, pas sur le nombre d'images affichées) pour un comportement identique
+// quel que soit le taux de rafraîchissement de l'écran.
+const player = {
+  w: 50, h: 24,
+  x: W/2 - 25, y: H - 50,
+  speed: 360,           // px/sec
+  cooldown: 0,
+  cooldownMax: 0.3,     // secondes
+  netCooldown: 0
+};
+
+let bullets = [];       // tirs du joueur
+let enemyBullets = [];  // tirs ennemis
+let netShots = [];      // tirs secondaires (filets)
+let enemies = [];
+let shields = [];
+
+const PLAYER_BULLET_SPEED = 540;  // px/sec
+const ENEMY_BULLET_SPEED = 300;   // px/sec
+
+const keys = {};
+
+// ---------- Thème musical (synthétisé en direct, façon puce sonore d'époque) ----------
+// Séquence : do, sol, ré dièse, do dièse, do, sol, ré dièse, sol dièse (octave 3)
+const MUSIC_NOTES = [130.81, 196.00, 155.56, 138.59, 130.81, 196.00, 155.56, 207.65];
+const MUSIC_BASE_NOTE_DURATION = 0.88; // secondes, à la vitesse la plus lente (grille pleine)
+let audioCtx = null;
+let musicEnabled = true;
+let musicIndex = 0;
+let musicTimer = 0;
+let enemyTotalCount = 0; // nombre d'unités actives au début de la vague, pour accélérer le thème au fur et à mesure
+
+function ensureAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } else if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function playNote(freq, duration) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.16, audioCtx.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function updateMusic(dt) {
+  if (!musicEnabled || !audioCtx || paused || gameOver) return;
+  musicTimer -= dt;
+  if (musicTimer <= 0) {
+    // Le thème accélère à mesure que la grille se vide (comme dans l'original),
+    // et le tempo de base est 10% plus rapide à chaque nouveau tableau
+    const remaining = enemies.filter(e => e.stage !== 'freed').length;
+    const ratio = enemyTotalCount > 0 ? Math.max(remaining / enemyTotalCount, 0) : 1;
+    const waveTempoFactor = Math.pow(1 / ENEMY_SPEED_GROWTH_PER_WAVE, wave - 1);
+    const duration = MUSIC_BASE_NOTE_DURATION * waveTempoFactor * (0.35 + 0.65 * ratio);
+    playNote(MUSIC_NOTES[musicIndex], duration * 0.85);
+    musicIndex = (musicIndex + 1) % MUSIC_NOTES.length;
+    musicTimer = duration;
+  }
+}
+
+// ---------- Construction de la grille d'ennemis ----------
+const ENEMY_ROWS = 3;
+const ENEMY_COLS = 6;
+const ENEMY_W = 40;
+const ENEMY_H = 26;
+const ENEMY_GAP_X = 58; // 18px d'espacement d'origine + une case libre de la largeur d'un bateau (40px)
+const ENEMY_GAP_Y = 20;
+
+let enemyDir = 1;       // 1 = droite, -1 = gauche
+let enemySpeed = 40;    // px/sec, ajusté par vague dans buildEnemies()
+const ENEMY_BASE_SPEED = 40;
+const ENEMY_SPEED_GROWTH_PER_WAVE = 1.20; // +20% de vitesse à chaque nouveau tableau
+let enemyDropDistance = 18;
+let enemyShootTimer = 0.75; // secondes avant le prochain tir ennemi
+
+function buildEnemies() {
+  enemies = [];
+  const pitchX = ENEMY_W + ENEMY_GAP_X;
+  const gridW = ENEMY_COLS * pitchX - ENEMY_GAP_X;
+  const startX = (W - gridW) / 2;
+  const startY = 60;
+  for (let r = 0; r < ENEMY_ROWS; r++) {
+    // Rangée du milieu (r=1) décalée d'un demi-pas pour le motif en damier,
+    // et amputée de sa colonne la plus à droite. Toutes les rangées sont
+    // désormais composées d'unités 1 (bateaux) au départ.
+    const isOffsetRow = (r % 2 === 1);
+    const rowOffsetX = isOffsetRow ? pitchX / 2 : 0;
+    const colsInRow = isOffsetRow ? ENEMY_COLS - 1 : ENEMY_COLS;
+    for (let c = 0; c < colsInRow; c++) {
+      enemies.push({
+        x: startX + rowOffsetX + c * pitchX,
+        y: startY + r * (ENEMY_H + ENEMY_GAP_Y),
+        w: ENEMY_W,
+        h: ENEMY_H,
+        // stage: 'active' (unité 1, bateau, tire sans limite) -> 'damaged' (unité 3, anneau orange,
+        // ne tire jamais, aucun point) -> 'freed' (case libérée, l'unité disparaît vraiment)
+        stage: 'active',
+        invulnerableTimer: 0, // >0 : unité rose, temporairement invulnérable (effet du tir de l'unité 2)
+        turretSide: Math.random() < 0.5 ? 'left' : 'right', // tourelle décalée à gauche ou à droite, tirée au sort une fois pour toutes
+        dotAngle: Math.random() * Math.PI * 2      // position aléatoire du point blanc sur l'anneau (unité 3)
+      });
+    }
+  }
+  enemySpeed = ENEMY_BASE_SPEED * Math.pow(ENEMY_SPEED_GROWTH_PER_WAVE, wave - 1) * DIFFICULTY_SETTINGS[difficulty].speedMult;
+  enemyTotalCount = enemies.length;
+}
+
+// ---------- Vaisseau bonus (ex-bateau rouge, traverse le haut de l'écran) ----------
+let bonusShip = null;
+let bonusBolts = []; // tirs de l'unité 2 : n'affectent pas le joueur, seulement les unités 1 et 3
+let bonusSpawnTimer = randRange(6, 12);
+const BONUS_Y = 26;
+const BONUS_SPEED = 120; // px/sec
+const BONUS_POINTS = 200;
+const BONUS_BOLT_SPEED = 260; // px/sec
+const BONUS_INVULN_DURATION = 7.5; // 5s + 50% : secondes d'invulnérabilité (unité 1 devient arc-en-ciel)
+
+function randRange(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function playGameOverSound() {
+  if (!audioCtx) return;
+  const t0 = audioCtx.currentTime;
+  const duration = 2.6; // nettement plus long que le son de perte de vie (1s)
+
+  // Bruit blanc décroissant, base du grondement
+  const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 1.4);
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+
+  // Filtre passe-bas nettement plus grave que celui de la perte de vie
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(700, t0);
+  filter.frequency.exponentialRampToValueAtTime(35, t0 + duration);
+
+  const noiseGain = audioCtx.createGain();
+  noiseGain.gain.setValueAtTime(0.5, t0);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+
+  // Drone grave supplémentaire en dessous, pour accentuer la gravité du son
+  const drone = audioCtx.createOscillator();
+  drone.type = 'sine';
+  drone.frequency.setValueAtTime(90, t0);
+  drone.frequency.exponentialRampToValueAtTime(30, t0 + duration);
+  const droneGain = audioCtx.createGain();
+  droneGain.gain.setValueAtTime(0.001, t0);
+  droneGain.gain.exponentialRampToValueAtTime(0.35, t0 + 0.15);
+  droneGain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+
+  noise.connect(filter);
+  filter.connect(noiseGain);
+  noiseGain.connect(audioCtx.destination);
+  drone.connect(droneGain);
+  droneGain.connect(audioCtx.destination);
+
+  noise.start(t0);
+  noise.stop(t0 + duration);
+  drone.start(t0);
+  drone.stop(t0 + duration);
+}
+
+function playExplosion() {
+  if (!audioCtx) return;
+  const t0 = audioCtx.currentTime;
+  const duration = 1.0;
+
+  // Bruit blanc généré via un buffer, base du grondement de l'explosion
+  const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize); // bruit décroissant
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+
+  // Filtre passe-bas dont la fréquence de coupure chute, pour un effet de grondement grave
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(1800, t0);
+  filter.frequency.exponentialRampToValueAtTime(80, t0 + duration);
+
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.5, t0);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  noise.start(t0);
+  noise.stop(t0 + duration);
+}
+
+function playLaser() {
+  if (!audioCtx) return;
+  const t0 = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(900, t0);
+  osc.frequency.exponentialRampToValueAtTime(300, t0 + 0.1);
+  gain.gain.setValueAtTime(0.001, t0);
+  gain.gain.exponentialRampToValueAtTime(0.12, t0 + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.11);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(t0);
+  osc.stop(t0 + 0.11);
+}
+
+function playBloop() {
+  if (!audioCtx) return;
+  const t0 = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(700, t0);
+  osc.frequency.exponentialRampToValueAtTime(220, t0 + 2.8);
+  gain.gain.setValueAtTime(0.001, t0);
+  gain.gain.exponentialRampToValueAtTime(0.25, t0 + 0.1);
+  gain.gain.setValueAtTime(0.25, t0 + 2.4);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 3.0);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(t0);
+  osc.stop(t0 + 3.0);
+}
+
+function spawnBonusShip() {
+  const fromLeft = Math.random() < 0.5;
+  bonusShip = {
+    x: fromLeft ? -ENEMY_W : W + ENEMY_W,
+    y: BONUS_Y,
+    w: ENEMY_W,
+    h: ENEMY_H,
+    dir: fromLeft ? 1 : -1,
+    points: BONUS_POINTS,
+    shotsRemaining: 2,          // peut tirer deux fois par passage
+    shotTimer: randRange(1, 2.5), // délai avant le premier tir
+    hasAppeared: false           // le bloop n'est joué qu'une fois l'unité réellement visible à l'écran
+  };
+}
+
+// ---------- Boucliers destructibles ----------
+const SHIELD_LINE_Y = H - 130; // ligne de hauteur des boucliers, sert aussi de ligne de front pour l'unité 1 (abaissée de 10px)
+
+function buildShields() {
+  shields = [];
+  const shieldCount = 4;
+  const blockSize = 8;
+  const shieldCols = 9;
+  const shieldRows = 6;
+  const totalWidth = W - 160;
+  const spacing = totalWidth / shieldCount;
+
+  for (let s = 0; s < shieldCount; s++) {
+    const baseX = 80 + s * spacing + spacing/2 - (shieldCols * blockSize)/2;
+    const baseY = SHIELD_LINE_Y;
+    const blocks = [];
+    for (let row = 0; row < shieldRows; row++) {
+      for (let col = 0; col < shieldCols; col++) {
+        // forme retournée : l'arche est désormais en haut, la base (en bas) reste plate
+        if (row < 2 && (col < 2 || col > shieldCols - 3)) continue;
+        blocks.push({
+          x: baseX + col * blockSize,
+          y: baseY + row * blockSize,
+          w: blockSize,
+          h: blockSize,
+          hp: 1
+        });
+      }
+    }
+    // Liseré jaune irrégulier le long de la base plate : petits segments destructibles,
+    // ajoutés au même tableau de blocs pour profiter des collisions déjà en place
+    const edgeSegments = 6;
+    const edgeSegWidth = (shieldCols * blockSize) / edgeSegments;
+    const shoreBottomY = baseY + shieldRows * blockSize;
+    for (let i = 0; i < edgeSegments; i++) {
+      blocks.push({
+        x: Math.floor(baseX + i * edgeSegWidth),
+        y: shoreBottomY,
+        w: Math.ceil(edgeSegWidth) + 1,
+        h: Math.max(Math.random() * 9, 2), // hauteur irrégulière, 9px maximum
+        hp: 1,
+        isShore: true
+      });
+    }
+    // Quelques volumes de végétation (destructibles pixel par pixel), côté marron de la jonction jaune/marron
+    const vegetationClusters = 7;
+    const vegCellSize = 2;
+    for (let c = 0; c < vegetationClusters; c++) {
+      const gridSize = Math.random() < 0.5 ? 3 : 4; // volume de 3x3 ou 4x4 pixels
+      const clusterSize = gridSize * vegCellSize;
+      const originX = baseX + Math.random() * (shieldCols * blockSize - clusterSize);
+      const originY = shoreBottomY - clusterSize; // aligné pile sur la ligne, entièrement côté marron
+      const clusterHp = { value: 1 }; // point de vie commun à toute la touffe
+      for (let r = 0; r < gridSize; r++) {
+        for (let col = 0; col < gridSize; col++) {
+          if (Math.random() < 0.6) { // touffe éparse plutôt qu'un carré plein
+            blocks.push({
+              x: originX + col * vegCellSize,
+              y: originY + r * vegCellSize,
+              w: vegCellSize,
+              h: vegCellSize,
+              hpRef: clusterHp,
+              isVegetation: true
+            });
+          }
+        }
+      }
+    }
+    shields.push({ blocks: blocks });
+  }
+}
+
+// ---------- Dessin des bateaux ----------
+function drawBoatBlack(x, y, w, h, turretSide) {
+  ctx.fillStyle = COLORS.boatBlack;
+  // coque (trapèze)
+  ctx.beginPath();
+  ctx.moveTo(x + w*0.05, y + h*0.55);
+  ctx.lineTo(x + w*0.95, y + h*0.55);
+  ctx.lineTo(x + w*0.80, y + h);
+  ctx.lineTo(x + w*0.20, y + h);
+  ctx.closePath();
+  ctx.fill();
+  // boudins latéraux (style zodiac générique)
+  ctx.fillStyle = COLORS.boatBlackDeck;
+  ctx.fillRect(x + w*0.05, y + h*0.40, w*0.9, h*0.18);
+  // cabine/tourelle, décalée à gauche ou à droite de l'unité (tirée au sort à la création)
+  ctx.fillStyle = COLORS.boatBlackDeck;
+  const turretX = turretSide === 'right' ? x + w*0.65 : x + w*0.05;
+  ctx.fillRect(turretX, y + h*0.10, w*0.3, h*0.35);
+}
+
+function hexToRgb(hex) {
+  const v = parseInt(hex.slice(1), 16);
+  return { r: (v >> 16) & 255, g: (v >> 8) & 255, b: v & 255 };
+}
+
+function lerpColor(hexA, hexB, t) {
+  const a = hexToRgb(hexA), b = hexToRgb(hexB);
+  const r = Math.round(a.r + (b.r - a.r) * t);
+  const g = Math.round(a.g + (b.g - a.g) * t);
+  const bl = Math.round(a.b + (b.b - a.b) * t);
+  return `rgb(${r}, ${g}, ${bl})`;
+}
+
+function darkenRgb(rgbString, factor) {
+  const nums = rgbString.match(/\d+/g).map(Number);
+  return `rgb(${Math.round(nums[0]*factor)}, ${Math.round(nums[1]*factor)}, ${Math.round(nums[2]*factor)})`;
+}
+
+// Couleurs du cycle arc-en-ciel de l'invulnérabilité : rose -> bleu -> vert -> (retour au rose)
+const RAINBOW_COLORS = ['#e8579f', '#4fa8e8', '#5fe89a'];
+const RAINBOW_PERIOD = 1.5; // secondes pour un cycle complet
+
+function getRainbowColor(t) {
+  const phase = ((t % RAINBOW_PERIOD) / RAINBOW_PERIOD) * RAINBOW_COLORS.length;
+  const index = Math.floor(phase) % RAINBOW_COLORS.length;
+  const nextIndex = (index + 1) % RAINBOW_COLORS.length;
+  const localT = phase - Math.floor(phase);
+  return lerpColor(RAINBOW_COLORS[index], RAINBOW_COLORS[nextIndex], localT);
+}
+
+function drawBoatPink(x, y, w, h, turretSide, mainColor, deckColor) {
+  ctx.fillStyle = mainColor;
+  ctx.beginPath();
+  ctx.moveTo(x + w*0.05, y + h*0.55);
+  ctx.lineTo(x + w*0.95, y + h*0.55);
+  ctx.lineTo(x + w*0.80, y + h);
+  ctx.lineTo(x + w*0.20, y + h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = deckColor;
+  ctx.fillRect(x + w*0.05, y + h*0.40, w*0.9, h*0.18);
+  ctx.fillStyle = deckColor;
+  const turretX = turretSide === 'right' ? x + w*0.65 : x + w*0.05;
+  ctx.fillRect(turretX, y + h*0.10, w*0.3, h*0.35);
+}
+
+function drawBoatRed(x, y, w, h) {
+  ctx.fillStyle = COLORS.boatRed;
+  ctx.beginPath();
+  ctx.moveTo(x + w*0.05, y + h*0.55);
+  ctx.lineTo(x + w*0.95, y + h*0.55);
+  ctx.lineTo(x + w*0.80, y + h);
+  ctx.lineTo(x + w*0.20, y + h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = COLORS.boatRedDeck;
+  ctx.fillRect(x + w*0.05, y + h*0.40, w*0.9, h*0.18);
+  ctx.fillStyle = COLORS.boatRedDeck;
+  // antenne / mât pour différencier le modèle "évolué"
+  ctx.fillRect(x + w*0.48, y - h*0.15, w*0.04, h*0.3);
+  ctx.fillRect(x + w*0.35, y + h*0.05, w*0.3, h*0.35);
+}
+
+function drawOrangeCircle(x, y, w, h, dotAngle) {
+  const outerRadius = Math.min(w, h) * 0.45;
+  const ringThickness = outerRadius * 0.4;
+  const ringRadius = outerRadius - ringThickness / 2; // rayon de la ligne médiane de l'anneau
+  const cx = x + w/2, cy = y + h/2;
+
+  // anneau (le fond bleu reste visible en son centre)
+  ctx.strokeStyle = COLORS.wreck;
+  ctx.lineWidth = ringThickness;
+  ctx.beginPath();
+  ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // 4 points blancs répartis uniformément sur l'anneau (tous les 90°, à partir de l'angle tiré au sort)
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 4; i++) {
+    const angle = dotAngle + i * (Math.PI / 2);
+    const dotX = cx + Math.cos(angle) * ringRadius;
+    const dotY = cy + Math.sin(angle) * ringRadius;
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, Math.min(w, h) * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawPlayer(x, y, w, h) {
+  const body = COLORS.player;       // gris des rochers
+  const accent = COLORS.playerDark; // bleu turquoise
+  const cx = x + w/2, cy = y + h/2;
+
+  // Pales du rotor principal, vues de dessus (croix fine couvrant tout le gabarit)
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x + w*0.02, cy);
+  ctx.lineTo(x + w*0.98, cy);
+  ctx.moveTo(cx, y + h*0.04);
+  ctx.lineTo(cx, y + h*0.96);
+  ctx.stroke();
+
+  // Moyeu du rotor, petit disque turquoise au centre
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(cx, cy, Math.min(w, h) * 0.09, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Poutre de queue, fine bande grise vers le bas du gabarit
+  ctx.fillStyle = body;
+  ctx.fillRect(cx - w*0.02, cy, w*0.04, h*0.42);
+
+  // Fuselage principal, ellipse allongée verticalement centrée sur le moyeu
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, w*0.11, h*0.34, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Cockpit, accent turquoise à l'avant (vers le haut de l'écran)
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.ellipse(cx, y + h*0.22, w*0.055, h*0.14, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Rotor de queue, petit trait turquoise perpendiculaire en bout de poutre
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx - w*0.06, y + h*0.96);
+  ctx.lineTo(cx + w*0.06, y + h*0.96);
+  ctx.stroke();
+}
+
+// ---------- Entrées clavier ----------
+document.addEventListener('keydown', e => {
+  ensureAudio(); // l'audio ne peut démarrer qu'après une interaction utilisateur
+  keys[e.key] = true;
+  if (e.key === ' ') e.preventDefault();
+  if (e.key === 'Shift') keys['NetFire'] = true;
+  if (e.key.toLowerCase() === 'p' && !gameOver) {
+    paused = !paused;
+  }
+  if (e.key.toLowerCase() === 'm') {
+    musicEnabled = !musicEnabled;
+  }
+});
+document.addEventListener('keyup', e => {
+  keys[e.key] = false;
+  if (e.key === 'Shift') keys['NetFire'] = false;
+});
+
+// ---------- Contrôles tactiles ----------
+// Réutilisent le même objet "keys" que le clavier : aucune autre logique de jeu à modifier
+// Retour haptique : vibration courte à chaque pression, si l'appareil/navigateur le permet
+// (l'API Vibration n'existe pas sur iOS Safari, d'où la vérification avant chaque appel)
+function vibrate(ms) {
+  if (navigator.vibrate) navigator.vibrate(ms);
+}
+
+function bindTouchButton(id, key) {
+  const el = document.getElementById(id);
+  const press = (ev) => { ev.preventDefault(); ensureAudio(); vibrate(15); keys[key] = true; };
+  const release = (ev) => { ev.preventDefault(); keys[key] = false; };
+  el.addEventListener('touchstart', press, { passive: false });
+  el.addEventListener('touchend', release, { passive: false });
+  el.addEventListener('touchcancel', release, { passive: false });
+  // Souris/pointeur en repli, pour tester sur un ordinateur qui déclare un pointeur tactile
+  el.addEventListener('mousedown', press);
+  el.addEventListener('mouseup', release);
+  el.addEventListener('mouseleave', release);
+}
+bindTouchButton('touchLeft', 'ArrowLeft');
+bindTouchButton('touchRight', 'ArrowRight');
+bindTouchButton('touchFire', ' ');
+bindTouchButton('touchFire2', 'NetFire'); // tir secondaire (filet)
+
+// Boutons système façon console : Select (musique) et Start (pause) — actions ponctuelles, pas de maintien
+function bindTapToggle(id, action) {
+  const el = document.getElementById(id);
+  const trigger = (ev) => { ev.preventDefault(); ensureAudio(); vibrate(15); action(); };
+  el.addEventListener('touchstart', trigger, { passive: false });
+  el.addEventListener('mousedown', trigger);
+}
+bindTapToggle('touchSelect', () => { musicEnabled = !musicEnabled; });
+bindTapToggle('touchStart', () => { if (!gameOver) paused = !paused; });
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  ensureAudio();
+  resetGame();
+});
+
+document.getElementById('mainMenuBtn').addEventListener('click', () => {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'block';
+  gameRunning = false;
+});
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  ensureAudio();
+  document.getElementById('startScreen').style.display = 'none';
+  resetGame();
+  if (!gameRunning) {
+    gameRunning = true;
+    requestAnimationFrame(loop);
+  }
+});
+
+async function loadHighScore() {
+  // 1) window.storage : disponible dans l'aperçu d'artefact de Claude.ai
+  try {
+    if (window.storage && window.storage.get) {
+      const result = await window.storage.get('highScore');
+      if (result) { highScore = parseInt(result.value, 10) || 0; return; }
+    }
+  } catch (e) {
+    // pas de valeur enregistrée via window.storage, ou API indisponible ici : on tente localStorage
+  }
+  // 2) localStorage : prend le relais une fois le jeu exporté en PWA ou en application autonome
+  try {
+    const saved = localStorage.getItem('navalInvadersHighScore');
+    if (saved !== null) highScore = parseInt(saved, 10) || 0;
+  } catch (e) {
+    highScore = 0; // aucun stockage disponible dans ce contexte
+  }
+}
+
+async function saveHighScore() {
+  let savedViaWindowStorage = false;
+  try {
+    if (window.storage && window.storage.set) {
+      await window.storage.set('highScore', String(highScore));
+      savedViaWindowStorage = true;
+    }
+  } catch (e) {
+    // window.storage indisponible ou en échec : on se rabat sur localStorage ci-dessous
+  }
+  if (!savedViaWindowStorage) {
+    try {
+      localStorage.setItem('navalInvadersHighScore', String(highScore));
+    } catch (e) {
+      // aucun stockage disponible : le meilleur score reste valable pour la session en cours
+    }
+  }
+}
+
+document.getElementById('highScoreBtn').addEventListener('click', () => {
+  const el = document.getElementById('highScoreText');
+  if (el.style.display === 'block') {
+    el.style.display = 'none';
+  } else {
+    el.textContent = 'Meilleur score : ' + highScore;
+    el.style.display = 'block';
+  }
+});
+
+document.getElementById('difficultyBtn').addEventListener('click', () => {
+  const currentIndex = DIFFICULTY_ORDER.indexOf(difficulty);
+  difficulty = DIFFICULTY_ORDER[(currentIndex + 1) % DIFFICULTY_ORDER.length];
+  document.getElementById('difficultyBtn').textContent = 'Difficulté : ' + DIFFICULTY_LABELS[difficulty];
+});
+
+document.getElementById('quitBtn').addEventListener('click', () => {
+  window.close();
+  // Si le navigateur bloque la fermeture (onglet non ouvert par script), on le signale
+  setTimeout(() => {
+    document.getElementById('startScreen').innerHTML =
+      '<div class="logo-naval">NAVAL</div><div class="logo-invaders">INVADERS</div>' +
+      '<p>Vous pouvez fermer cet onglet pour quitter le jeu.</p>';
+  }, 300);
+});
+
+// ---------- Logique ----------
+function resetGame() {
+  score = 0;
+  lives = DIFFICULTY_SETTINGS[difficulty].startLives;
+  wave = 1;
+  gameOver = false;
+  paused = false;
+  bullets = [];
+  enemyBullets = [];
+  bonusShip = null;
+  bonusBolts = [];
+  bonusSpawnTimer = randRange(6, 12);
+  musicIndex = 0;
+  musicTimer = 0;
+  lastTimestamp = 0;
+  player.x = W/2 - player.w/2;
+  buildEnemies();
+  buildShields();
+  document.getElementById('overlay').style.display = 'none';
+  updateHUD();
+}
+
+function lifeIconSVG() {
+  return `<svg width="16" height="16" viewBox="0 0 16 16" style="vertical-align:middle;margin-right:3px;">
+    <line x1="1" y1="8" x2="15" y2="8" stroke="${COLORS.playerDark}" stroke-width="1.5"/>
+    <line x1="8" y1="1" x2="8" y2="15" stroke="${COLORS.playerDark}" stroke-width="1.5"/>
+    <ellipse cx="8" cy="8" rx="2.6" ry="4.6" fill="${COLORS.player}"/>
+  </svg>`;
+}
+
+function updateHUD() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('lives').innerHTML = lifeIconSVG().repeat(Math.max(lives, 0));
+  document.getElementById('wave').textContent = wave;
+}
+
+function nextWave() {
+  wave++;
+  bullets = [];
+  enemyBullets = [];
+  bonusBolts = [];
+  buildEnemies();
+  // Les boucliers ne sont plus reconstruits entre deux vagues : les dégâts subis persistent
+  updateHUD();
+}
+
+function endGame(win) {
+  gameOver = true;
+  if (!win) playGameOverSound();
+  if (score > highScore) {
+    highScore = score;
+    saveHighScore();
+  }
+  document.getElementById('overlayTitle').textContent = win ? 'VICTOIRE (pour l\'instant)' : 'GAME OVER';
+  document.getElementById('overlayScore').textContent = 'Score : ' + score;
+  document.getElementById('overlay').style.display = 'block';
+}
+
+function playerHit() {
+  lives--;
+  updateHUD();
+  playExplosion(); // son utilisé à chaque perte de vie
+  if (lives <= 0) {
+    endGame(false);
+  } else {
+    enemyBullets = [];
+    player.x = W/2 - player.w/2;
+  }
+}
+
+function update(dt) {
+  if (paused || gameOver) return;
+
+  gameTime += dt;
+  updateMusic(dt);
+
+  // Déplacement joueur (px/sec * secondes écoulées)
+  if ((keys['ArrowLeft'] || keys['q'] || keys['Q']) && player.x > 0) {
+    player.x -= player.speed * dt;
+  }
+  if ((keys['ArrowRight'] || keys['d'] || keys['D']) && player.x < W - player.w) {
+    player.x += player.speed * dt;
+  }
+
+  // Tir joueur (principal)
+  if (player.cooldown > 0) player.cooldown -= dt;
+  if (keys[' '] && player.cooldown <= 0) {
+    bullets.push({ x: player.x + player.w/2 - 2, y: player.y, w: 4, h: 14 });
+    player.cooldown = player.cooldownMax;
+    playLaser();
+  }
+
+  // Tir joueur (secondaire, filet)
+  if (player.netCooldown > 0) player.netCooldown -= dt;
+  if (keys['NetFire'] && player.netCooldown <= 0) {
+    netShots.push({ x: player.x + player.w/2 - 5, y: player.y, w: 10, h: 10 });
+    player.netCooldown = player.cooldownMax;
+    playLaser();
+  }
+
+  // Mise à jour des tirs joueur
+  bullets.forEach(b => b.y -= PLAYER_BULLET_SPEED * dt);
+  bullets = bullets.filter(b => b.y + b.h > 0);
+
+  // Mise à jour du filet : même direction et vitesse que le tir de base
+  netShots.forEach(n => n.y -= PLAYER_BULLET_SPEED * dt);
+  netShots = netShots.filter(n => n.y + n.h > 0);
+
+  // Mise à jour des tirs ennemis
+  enemyBullets.forEach(b => b.y += ENEMY_BULLET_SPEED * dt);
+  enemyBullets = enemyBullets.filter(b => b.y < H);
+
+  // Décompte de l'invulnérabilité (unités 1 roses, effet du tir de l'unité 2)
+  for (const e of enemies) {
+    if (e.invulnerableTimer > 0) {
+      e.invulnerableTimer -= dt;
+      if (e.invulnerableTimer < 0) e.invulnerableTimer = 0;
+    }
+  }
+
+  // Mise à jour des tirs de l'unité 2 (affectent les unités 1/3, et peuvent désormais aussi toucher le joueur)
+  bonusBolts.forEach(b => b.y += BONUS_BOLT_SPEED * dt);
+  bonusBolts = bonusBolts.filter(b => b.y < H);
+  for (const bolt of bonusBolts) {
+    for (const e of enemies) {
+      if (e.stage === 'freed' || bolt.y > H) continue;
+      if (rectsOverlap(bolt, e)) {
+        if (e.invulnerableTimer > 0) {
+          // Unité 1 déjà améliorée (rose) : le tir ne déclenche rien
+        } else if (e.stage === 'damaged') {
+          e.stage = 'active'; // unité 3 -> redevient unité 1
+          e.invulnerableTimer = 0;
+        } else if (e.stage === 'active') {
+          e.invulnerableTimer = BONUS_INVULN_DURATION; // devient rose, invulnérable 5 secondes
+        }
+        bolt.y = H + 999; // le tir est consommé au contact
+      }
+    }
+  }
+  // Collision des tirs de l'unité 2 avec le joueur : perte de vie, comme un tir ennemi classique
+  for (const bolt of bonusBolts) {
+    if (bolt.y <= H && rectsOverlap(bolt, player)) {
+      bolt.y = H + 999;
+      playerHit();
+    }
+  }
+  bonusBolts = bonusBolts.filter(b => b.y < H);
+
+  // Déplacement de la grille d'ennemis (unités 1 actives ET unités 3 endommagées se déplacent ensemble ; les cases libérées ne comptent plus)
+  const presentEnemies = enemies.filter(e => e.stage !== 'freed');
+  const shootingEnemies = enemies.filter(e => e.stage === 'active');
+  if (presentEnemies.length > 0) {
+    const step = enemySpeed * dt;
+    let hitEdge = false;
+    for (const e of presentEnemies) {
+      const nextX = e.x + step * enemyDir;
+      if (nextX < 10 || nextX + e.w > W - 10) { hitEdge = true; break; }
+    }
+    if (hitEdge) {
+      enemyDir *= -1;
+      for (const e of presentEnemies) e.y += enemyDropDistance;
+    } else {
+      for (const e of presentEnemies) e.x += step * enemyDir;
+    }
+
+    // Défaite si une unité 1 (active) ou une unité 3 (endommagée) atteint la ligne des boucliers,
+    // même si ceux-ci sont détruits à cet endroit
+    for (const e of presentEnemies) {
+      if ((e.stage === 'active' || e.stage === 'damaged') && e.y + e.h >= SHIELD_LINE_Y) {
+        endGame(false);
+        return;
+      }
+    }
+
+    // Vérifie si une unité encore présente (active ou endommagée) atteint le joueur
+    for (const e of presentEnemies) {
+      if (e.y + e.h >= player.y) {
+        endGame(false);
+        break;
+      }
+    }
+  } else {
+    nextWave();
+  }
+
+  // Tirs ennemis aléatoires (seules les unités 1 actives peuvent tirer ; les unités 3 ne tirent jamais)
+  enemyShootTimer -= dt;
+  if (enemyShootTimer <= 0 && shootingEnemies.length > 0) {
+    const shooter = shootingEnemies[Math.floor(Math.random() * shootingEnemies.length)];
+    enemyBullets.push({ x: shooter.x + shooter.w/2 - 2, y: shooter.y + shooter.h, w: 4, h: 12 });
+    enemyShootTimer = Math.max(0.25, 0.75 - wave * 0.033) * DIFFICULTY_SETTINGS[difficulty].shootCooldownMult;
+  }
+
+  // Vaisseau bonus : apparition, déplacement, tirs, sortie d'écran
+  if (bonusShip) {
+    bonusShip.x += bonusShip.dir * BONUS_SPEED * dt;
+
+    if (!bonusShip.hasAppeared && bonusShip.x + bonusShip.w > 0 && bonusShip.x < W) {
+      bonusShip.hasAppeared = true;
+      playBloop();
+    }
+
+    if (!bonusShip.neutralized && bonusShip.shotsRemaining > 0) {
+      bonusShip.shotTimer -= dt;
+      if (bonusShip.shotTimer <= 0) {
+        bonusBolts.push({ x: bonusShip.x + bonusShip.w/2 - 3, y: bonusShip.y + bonusShip.h, w: 6, h: 12 });
+        bonusShip.shotsRemaining--;
+        bonusShip.shotTimer = randRange(1, 2.5);
+      }
+    }
+
+    if (bonusShip.x < -bonusShip.w - 10 || bonusShip.x > W + 10) {
+      bonusShip = null;
+      bonusSpawnTimer = 15; // délai systématique, détruite ou non
+    }
+  } else {
+    bonusSpawnTimer -= dt;
+    if (bonusSpawnTimer <= 0) {
+      spawnBonusShip();
+    }
+  }
+
+  // Collisions : tirs joueur vs unités présentes (à deux étapes)
+  for (const b of bullets) {
+    for (const e of enemies) {
+      if (e.stage === 'freed') continue; // case déjà libérée, plus de cible
+      if (e.invulnerableTimer > 0) continue; // unité rose : temporairement invulnérable
+      if (rectsOverlap(b, e)) {
+        if (e.stage === 'active') {
+          e.stage = 'damaged'; // unité 1 -> unité 3 (anneau orange), ne tire jamais
+          score += 10;
+          updateHUD();
+        } else if (e.stage === 'damaged') {
+          e.stage = 'freed'; // unité 3 -> case libérée, l'unité disparaît réellement, aucun point gagné
+        }
+        b.y = -999;
+      }
+    }
+  }
+
+  // Collisions spécifiques au filet (tir secondaire)
+  for (const n of netShots) {
+    if (n.y < -900) continue;
+    // Boucliers : le filet est détruit, le bloc ne subit aucun dégât
+    for (const shield of shields) {
+      for (const block of shield.blocks) {
+        if (getBlockHp(block) > 0 && rectsOverlap(n, block)) {
+          n.y = -999;
+        }
+      }
+    }
+    if (n.y < -900) continue;
+    // Unité 1 : hitbox classique, le filet est détruit au contact, mais sans aucun effet sur l'unité
+    for (const e of enemies) {
+      if (e.stage === 'active' && e.invulnerableTimer <= 0 && rectsOverlap(n, e)) {
+        n.y = -999;
+      }
+    }
+    if (n.y < -900) continue;
+    // Unité 2 : même chose, hitbox classique sans effet
+    if (bonusShip && !bonusShip.neutralized && rectsOverlap(n, bonusShip)) {
+      n.y = -999;
+    }
+    if (n.y < -900) continue;
+    // Unité 3 : destruction mutuelle, classique, avec les points prévus au préalable
+    for (const e of enemies) {
+      if (e.stage === 'damaged' && rectsOverlap(n, e)) {
+        e.stage = 'freed';
+        score += 5; // valeur fixée au préalable pour la destruction d'une unité 3
+        updateHUD();
+        n.y = -999;
+      }
+    }
+  }
+  netShots = netShots.filter(n => n.y > -900);
+
+  // Collision : tirs joueur vs vaisseau bonus
+  if (bonusShip && !bonusShip.neutralized) {
+    for (const b of bullets) {
+      if (b.y > -900 && rectsOverlap(b, bonusShip)) {
+        bonusShip.neutralized = true; // devient une unité 3 volante, garde sa direction et sa vitesse
+        bonusShip.dotAngle = Math.random() * Math.PI * 2;
+        b.y = -999;
+        break;
+      }
+    }
+  }
+  bullets = bullets.filter(b => b.y > -900);
+
+  // Collisions : tirs joueur vs boucliers
+  for (const b of bullets) {
+    for (const shield of shields) {
+      for (const block of shield.blocks) {
+        if (getBlockHp(block) > 0 && rectsOverlap(b, block)) {
+          damageBlock(block);
+          b.y = -999;
+        }
+      }
+    }
+  }
+  bullets = bullets.filter(b => b.y > -900);
+
+  // Collisions : tirs ennemis vs boucliers
+  for (const b of enemyBullets) {
+    for (const shield of shields) {
+      for (const block of shield.blocks) {
+        if (getBlockHp(block) > 0 && rectsOverlap(b, block)) {
+          damageBlock(block);
+          b.y = 9999;
+        }
+      }
+    }
+  }
+
+  // La végétation du rivage est décorative et indestructible (comme la zone qui la porte)
+  enemyBullets = enemyBullets.filter(b => b.y < 9000);
+
+  // Collisions : tirs ennemis vs joueur
+  for (const b of enemyBullets) {
+    if (rectsOverlap(b, player)) {
+      b.y = 9999;
+      playerHit();
+    }
+  }
+  enemyBullets = enemyBullets.filter(b => b.y < 9000);
+}
+
+function getBlockHp(block) {
+  return block.hpRef ? block.hpRef.value : block.hp;
+}
+function damageBlock(block) {
+  if (block.hpRef) { block.hpRef.value = 0; } else { block.hp--; }
+}
+
+function rectsOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = COLORS.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Ligne de défaite : pointillé rouge/blanc alterné, indestructible, sous les boucliers
+  // Séquences de 4 tirets (r/b/r/b) de 5px de long sur 2px de haut, séparées par 2px d'espace
+  const dashWidth = 5;
+  const dashGap = 2;
+  const groupWidth = dashWidth * 4 + dashGap;
+  for (let groupStart = 0; groupStart < W; groupStart += groupWidth) {
+    for (let k = 0; k < 4; k++) {
+      const dx = groupStart + k * dashWidth;
+      if (dx >= W) break;
+      ctx.fillStyle = (k % 2 === 0) ? '#e02020' : '#f0f0f0';
+      ctx.fillRect(dx, SHIELD_LINE_Y - 1, dashWidth, 2);
+    }
+  }
+
+  // Rivage : même tracé irrégulier qu'avant, pixellisé en blocs rectangulaires (pas de diagonale)
+  // Un léger chevauchement entre segments évite les fines lignes de séparation dues à l'anticrénelage
+  ctx.fillStyle = COLORS.shore;
+  const shoreSegWidth = W / SHORE_SEGMENTS;
+  for (let i = 0; i < SHORE_SEGMENTS; i++) {
+    const segHeight = SHORE_JAGGED_POINTS[i];
+    const segX = Math.floor(i * shoreSegWidth);
+    ctx.fillRect(segX, H - segHeight, Math.ceil(shoreSegWidth) + 1, segHeight);
+  }
+
+  // Végétation décorative (non destructible) sur le rivage, en volumes de pixels
+  ctx.fillStyle = COLORS.vegetation;
+  for (const cluster of SHORE_VEGETATION) {
+    for (const cell of cluster.cells) {
+      ctx.fillRect(cell.x, cell.y, cluster.size, cluster.size);
+    }
+  }
+
+  // Boucliers : forme retournée (arche en haut, base plate en bas), gris sombre uni,
+  // liseré jaune constitué de petits segments destructibles au même titre que les rochers
+  for (const shield of shields) {
+    for (const block of shield.blocks) {
+      if (getBlockHp(block) <= 0) continue;
+      ctx.fillStyle = block.isVegetation ? COLORS.vegetation : (block.isShore ? COLORS.shore : COLORS.shield);
+      ctx.fillRect(block.x, block.y, block.w, block.h);
+    }
+  }
+
+  // Ennemis (grille principale : unité 1 = bateau noir (rose si invulnérable), unité 3 = rond orange endommagé, rien si la case est libérée)
+  for (const e of enemies) {
+    if (e.stage === 'freed') continue;
+    else if (e.stage === 'damaged') drawOrangeCircle(e.x, e.y, e.w, e.h, e.dotAngle);
+    else if (e.invulnerableTimer > 0) {
+      const mainColor = getRainbowColor(gameTime);
+      const deckColor = darkenRgb(mainColor, 0.6);
+      drawBoatPink(e.x, e.y, e.w, e.h, e.turretSide, mainColor, deckColor);
+    }
+    else drawBoatBlack(e.x, e.y, e.w, e.h, e.turretSide);
+  }
+
+  // Vaisseau bonus (bateau rouge qui traverse le haut de l'écran, ou anneau orange une fois neutralisé)
+  if (bonusShip) {
+    if (bonusShip.neutralized) {
+      drawOrangeCircle(bonusShip.x, bonusShip.y, bonusShip.w, bonusShip.h, bonusShip.dotAngle);
+    } else {
+      drawBoatRed(bonusShip.x, bonusShip.y, bonusShip.w, bonusShip.h);
+    }
+  }
+
+  // Joueur
+  drawPlayer(player.x, player.y, player.w, player.h);
+
+  // Tirs joueur
+  ctx.fillStyle = COLORS.laser;
+  for (const b of bullets) ctx.fillRect(b.x, b.y, b.w, b.h);
+
+  // Filets (tir secondaire), motif de toile d'araignée
+  ctx.strokeStyle = COLORS.net;
+  ctx.lineWidth = 1;
+  for (const n of netShots) {
+    const cx = n.x + n.w/2, cy = n.y + n.h/2;
+    const rOuter = n.w/2, rInner = n.w/4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rOuter, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, rInner, 0, Math.PI * 2);
+    ctx.stroke();
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * rOuter, cy + Math.sin(a) * rOuter);
+      ctx.lineTo(cx - Math.cos(a) * rOuter, cy - Math.sin(a) * rOuter);
+      ctx.stroke();
+    }
+  }
+
+  // Tirs ennemis
+  ctx.fillStyle = COLORS.enemyLaser;
+  for (const b of enemyBullets) ctx.fillRect(b.x, b.y, b.w, b.h);
+
+  // Tirs de l'unité 2 (affectent les unités 1/3, et peuvent toucher le joueur)
+  ctx.fillStyle = COLORS.bonusBolt;
+  for (const b of bonusBolts) ctx.fillRect(b.x, b.y, b.w, b.h);
+
+  if (paused && !gameOver) {
+    ctx.fillStyle = 'rgba(4,16,32,0.6)';
+    ctx.fillRect(0, 0, W, H);
+    const pauseGradient = ctx.createLinearGradient(0, H/2 - 20, 0, H/2 + 10);
+    pauseGradient.addColorStop(0, '#f5f5f5');
+    pauseGradient.addColorStop(0.4, '#b0b0b0');
+    pauseGradient.addColorStop(1, '#5a5a5a');
+    ctx.fillStyle = pauseGradient;
+    ctx.font = '900 40px "Arial Black", Impact, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('PAUSE', W/2, H/2);
+    ctx.textAlign = 'start';
+  }
+}
+
+function loop(timestamp) {
+  if (!gameRunning) return; // le retour au menu principal arrête la boucle
+  if (!lastTimestamp) lastTimestamp = timestamp;
+  // dt en secondes, plafonné à 0.05s pour éviter les à-coups si l'onglet
+  // reste inactif un moment (évite qu'un gros dt ne fasse "sauter" les objets)
+  let dt = (timestamp - lastTimestamp) / 1000;
+  dt = Math.min(dt, 0.05);
+  lastTimestamp = timestamp;
+
+  update(dt);
+  draw();
+  animFrame = requestAnimationFrame(loop);
+}
+
+// Prépare une scène initiale figée en arrière-plan de l'écran d'accueil,
+// sans démarrer la boucle de jeu (qui n'est lancée qu'au clic sur "Jouer")
+resetGame();
+draw();
+loadHighScore();
+
+// Verrouillage de l'orientation en portrait quand l'API le permet
+// (nécessite généralement le plein écran ou une PWA installée ; échoue silencieusement sinon,
+// l'écran de rotation ci-dessus prend le relais dans les autres cas)
+if (screen.orientation && screen.orientation.lock) {
+  screen.orientation.lock('portrait').catch(() => {});
+}
+
+// Enregistrement du service worker (fonctionnement hors-ligne, installabilité de la PWA)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+
+</script>
+</body>
+</html>
