@@ -1602,6 +1602,8 @@ if ('serviceWorker' in navigator) {
       .then(() => { console.log('Service worker enregistré avec succès'); })
       .catch((err) => { alert('Erreur service worker : ' + err.name + ' - ' + err.message); });
   });
+} else {
+  alert('API service worker indisponible dans ce navigateur/contexte.');
 }
 
 </script>
