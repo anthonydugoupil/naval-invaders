@@ -1591,8 +1591,13 @@ loadHighScore();
 // Verrouillage de l'orientation en portrait quand l'API le permet
 // (nécessite généralement le plein écran ou une PWA installée ; échoue silencieusement sinon,
 // l'écran de rotation ci-dessus prend le relais dans les autres cas)
-if (screen.orientation && screen.orientation.lock) {
-  screen.orientation.lock('portrait').catch(() => {});
+try {
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('portrait').catch(() => {});
+  }
+} catch (e) {
+  // le verrouillage peut lancer une erreur immédiate (pas seulement rejeter une promesse)
+  // hors plein écran sur certains navigateurs : sans conséquence, l'écran de rotation prend le relais
 }
 
 // Enregistrement du service worker (fonctionnement hors-ligne, installabilité de la PWA)
