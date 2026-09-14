@@ -1,5 +1,6 @@
-const CACHE_NAME = 'naval-invaders-v1';
+const CACHE_NAME = 'naval-invaders-v2';
 const ASSETS_TO_CACHE = [
+  './',
   './index.html',
   './manifest.json',
   './icons/icon-192.png',
@@ -24,9 +25,18 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch : sert le cache en priorité, retombe sur le réseau si besoin (hors-ligne inclus)
+// Fetch : sert le cache en priorité ; pour toute navigation qui échouerait
+// (hors-ligne + URL non trouvée telle quelle), on retombe sur index.html en dernier
+// recours, pour garantir que le jeu se charge toujours hors-ligne
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).catch(() => {
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
+      });
+    })
   );
 });

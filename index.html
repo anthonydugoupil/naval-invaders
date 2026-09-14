@@ -258,6 +258,12 @@
     -webkit-user-select: none;
     touch-action: none;
   }
+  .net-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    display: block;
+  }
   .touch-triangle {
     width: 0;
     height: 0;
@@ -386,7 +392,7 @@
     </div>
     <div id="touchFireGroup">
       <div class="touch-btn" id="touchFire">🔥</div>
-      <div class="touch-btn" id="touchFire2"><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="#ffb020" stroke-width="1.2"/><circle cx="14" cy="14" r="6" fill="none" stroke="#ffb020" stroke-width="1.2"/><line x1="14" y1="2" x2="14" y2="26" stroke="#ffb020" stroke-width="1.2"/><line x1="2" y1="14" x2="26" y2="14" stroke="#ffb020" stroke-width="1.2"/><line x1="5.8" y1="5.8" x2="22.2" y2="22.2" stroke="#ffb020" stroke-width="1.2"/><line x1="22.2" y1="5.8" x2="5.8" y2="22.2" stroke="#ffb020" stroke-width="1.2"/></svg></div>
+      <div class="touch-btn" id="touchFire2"><svg class="net-icon" width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="#ffb020" stroke-width="1.2"/><circle cx="14" cy="14" r="6" fill="none" stroke="#ffb020" stroke-width="1.2"/><line x1="14" y1="2" x2="14" y2="26" stroke="#ffb020" stroke-width="1.2"/><line x1="2" y1="14" x2="26" y2="14" stroke="#ffb020" stroke-width="1.2"/><line x1="5.8" y1="5.8" x2="22.2" y2="22.2" stroke="#ffb020" stroke-width="1.2"/><line x1="22.2" y1="5.8" x2="5.8" y2="22.2" stroke="#ffb020" stroke-width="1.2"/></svg></div>
     </div>
   </div>
   <div id="touchSystemRow">
@@ -987,12 +993,16 @@ document.addEventListener('keyup', e => {
 // Retour haptique : vibration courte à chaque pression, si l'appareil/navigateur le permet
 // (l'API Vibration n'existe pas sur iOS Safari, d'où la vérification avant chaque appel)
 function vibrate(ms) {
-  if (navigator.vibrate) navigator.vibrate(ms);
+  try {
+    if (navigator.vibrate) navigator.vibrate(ms);
+  } catch (e) {
+    // vibration indisponible ou refusée : sans conséquence sur le reste du jeu
+  }
 }
 
 function bindTouchButton(id, key) {
   const el = document.getElementById(id);
-  const press = (ev) => { ev.preventDefault(); ensureAudio(); vibrate(15); keys[key] = true; };
+  const press = (ev) => { ev.preventDefault(); vibrate(15); ensureAudio(); keys[key] = true; };
   const release = (ev) => { ev.preventDefault(); keys[key] = false; };
   el.addEventListener('touchstart', press, { passive: false });
   el.addEventListener('touchend', release, { passive: false });
@@ -1010,7 +1020,7 @@ bindTouchButton('touchFire2', 'NetFire'); // tir secondaire (filet)
 // Boutons système façon console : Select (musique) et Start (pause) — actions ponctuelles, pas de maintien
 function bindTapToggle(id, action) {
   const el = document.getElementById(id);
-  const trigger = (ev) => { ev.preventDefault(); ensureAudio(); vibrate(15); action(); };
+  const trigger = (ev) => { ev.preventDefault(); vibrate(15); ensureAudio(); action(); };
   el.addEventListener('touchstart', trigger, { passive: false });
   el.addEventListener('mousedown', trigger);
 }
