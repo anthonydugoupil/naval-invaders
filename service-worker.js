@@ -1,4 +1,4 @@
-const CACHE_NAME = 'naval-invaders-v2';
+const CACHE_NAME = 'naval-invaders-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
