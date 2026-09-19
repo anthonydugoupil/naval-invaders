@@ -387,7 +387,7 @@
     <button id="difficultyBtn">Difficulté : Normal</button>
     <button id="quitBtn">Quitter</button>
     <p style="margin-top: 32px; margin-bottom: 0; font-size: 12px; opacity: 0.7;">Crédits : Claude & Anthony du Goupil.</p>
-    <p style="margin-top: 4px; margin-bottom: 0; font-size: 10px; opacity: 0.5;">build-2026-09-17-B</p>
+    <p style="margin-top: 4px; margin-bottom: 0; font-size: 10px; opacity: 0.5;">build-2026-09-17-C</p>
   </div>
 </div>
 
@@ -1012,7 +1012,7 @@ function vibrate(ms) {
 function bindTouchButton(id, key) {
   const el = document.getElementById(id);
   const press = (ev) => { ev.preventDefault(); vibrate(15); ensureAudio(); keys[key] = true; };
-  const release = (ev) => { ev.preventDefault(); keys[key] = false; };
+  const release = (ev) => { ev.preventDefault(); vibrate(15); keys[key] = false; };
   el.addEventListener('touchstart', press, { passive: false });
   el.addEventListener('touchend', release, { passive: false });
   el.addEventListener('touchcancel', release, { passive: false });
@@ -1020,6 +1020,9 @@ function bindTouchButton(id, key) {
   el.addEventListener('mousedown', press);
   el.addEventListener('mouseup', release);
   el.addEventListener('mouseleave', release);
+  // Vibration également sur "click" classique (certains navigateurs n'accordent
+  // la vibration qu'à cet événement précis, pas à touchstart)
+  el.addEventListener('click', () => { vibrate(15); });
 }
 bindTouchButton('touchLeft', 'ArrowLeft');
 bindTouchButton('touchRight', 'ArrowRight');
@@ -1029,8 +1032,10 @@ bindTouchButton('touchFire2', 'NetFire'); // tir secondaire (filet)
 // Boutons système façon console : Select (musique) et Start (pause) — actions ponctuelles, pas de maintien
 function bindTapToggle(id, action) {
   const el = document.getElementById(id);
+  const preventTouchStart = (ev) => { ev.preventDefault(); };
   const trigger = (ev) => { ev.preventDefault(); vibrate(15); ensureAudio(); action(); };
-  el.addEventListener('touchstart', trigger, { passive: false });
+  el.addEventListener('touchstart', preventTouchStart, { passive: false });
+  el.addEventListener('touchend', trigger, { passive: false });
   el.addEventListener('mousedown', trigger);
 }
 bindTapToggle('touchSelect', () => { musicEnabled = !musicEnabled; });
