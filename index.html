@@ -386,11 +386,11 @@
     <button id="quitBtn">Quitter</button>
     
     <p style="margin-top: 32px; margin-bottom: 0; font-size: 12px; opacity: 0.7;">Crédits : Claude & Anthony du Goupil.</p>
-    <p style="margin-top: 4px; margin-bottom: 0; font-size: 10px; opacity: 0.5;">build-2026-09-17-K</p>
+    <p style="margin-top: 4px; margin-bottom: 0; font-size: 10px; opacity: 0.5;">build-2026-09-17-L</p>
   </div>
 </div>
 
-<div id="instructions">← → ou Q/D pour se déplacer — ESPACE pour tirer — P pour pause — M pour couper/remettre la musique</div>
+<div id="instructions">← → ou Q/D pour se déplacer — ESPACE pour tirer — CTRL pour le tir secondaire — P pour pause — M pour couper/remettre la musique</div>
 
 <div id="touchControls">
   <div id="touchMainRow">
@@ -481,8 +481,8 @@ let highScore = 0;
 const DIFFICULTY_ORDER = ['facile', 'normal', 'difficile'];
 const DIFFICULTY_LABELS = { facile: 'Facile', normal: 'Normal', difficile: 'Difficile' };
 const DIFFICULTY_SETTINGS = {
-  facile:    { speedMult: 0.75, shootCooldownMult: 1.4, startLives: 4 },
-  normal:    { speedMult: 1.0,  shootCooldownMult: 1.0, startLives: 3 }, // réglages actuels, inchangés
+  facile:    { speedMult: 0.75, shootCooldownMult: 1.7, startLives: 4 },
+  normal:    { speedMult: 1.0,  shootCooldownMult: 1.1, startLives: 3 },
   difficile: { speedMult: 1.4,  shootCooldownMult: 0.7, startLives: 2 }
 };
 let difficulty = 'normal';
@@ -983,7 +983,7 @@ document.addEventListener('keydown', e => {
   ensureAudio(); // l'audio ne peut démarrer qu'après une interaction utilisateur
   keys[e.key] = true;
   if (e.key === ' ') e.preventDefault();
-  if (e.key === 'Shift') keys['NetFire'] = true;
+  if (e.key === 'Shift' || e.key === 'Control') keys['NetFire'] = true;
   if (e.key.toLowerCase() === 'p' && !gameOver) {
     paused = !paused;
   }
@@ -993,7 +993,7 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => {
   keys[e.key] = false;
-  if (e.key === 'Shift') keys['NetFire'] = false;
+  if (e.key === 'Shift' || e.key === 'Control') keys['NetFire'] = false;
 });
 
 // ---------- Contrôles tactiles ----------
