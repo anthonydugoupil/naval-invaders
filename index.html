@@ -531,34 +531,63 @@ function ensureAudio() {
   }
 }
 
-function playNote(freq, duration) {
+function playNote(freq, duration, delay = 0) {
   if (!audioCtx) return;
+  const t0 = audioCtx.currentTime + delay; // delay : décalage en secondes, pour programmer une suite de notes avec précision
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = 'square';
   osc.frequency.value = freq;
-  gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.16, audioCtx.currentTime + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  gain.gain.setValueAtTime(0.001, t0);
+  gain.gain.exponentialRampToValueAtTime(0.16, t0 + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
   osc.connect(gain);
   gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + duration);
+  osc.start(t0);
+  osc.stop(t0 + duration);
+}
+
+// Durée actuelle d'une note du thème (= une noire).
+// Le thème accélère à mesure que la grille se vide (comme dans l'original),
+// et le tempo de base est 10% plus rapide à chaque nouveau tableau
+function getThemeNoteDuration() {
+  const remaining = enemies.filter(e => e.stage !== 'freed').length;
+  const ratio = enemyTotalCount > 0 ? Math.max(remaining / enemyTotalCount, 0) : 1;
+  const waveTempoFactor = Math.pow(1 / ENEMY_SPEED_GROWTH_PER_WAVE, wave - 1);
+  return MUSIC_BASE_NOTE_DURATION * waveTempoFactor * (0.35 + 0.65 * ratio);
 }
 
 function updateMusic(dt) {
   if (!musicEnabled || !audioCtx || paused || gameOver) return;
   musicTimer -= dt;
   if (musicTimer <= 0) {
-    // Le thème accélère à mesure que la grille se vide (comme dans l'original),
-    // et le tempo de base est 10% plus rapide à chaque nouveau tableau
-    const remaining = enemies.filter(e => e.stage !== 'freed').length;
-    const ratio = enemyTotalCount > 0 ? Math.max(remaining / enemyTotalCount, 0) : 1;
-    const waveTempoFactor = Math.pow(1 / ENEMY_SPEED_GROWTH_PER_WAVE, wave - 1);
-    const duration = MUSIC_BASE_NOTE_DURATION * waveTempoFactor * (0.35 + 0.65 * ratio);
+    const duration = getThemeNoteDuration();
     playNote(MUSIC_NOTES[musicIndex], duration * 0.85);
     musicIndex = (musicIndex + 1) % MUSIC_NOTES.length;
     musicTimer = duration;
+  }
+}
+
+// ---------- Jingles de bascule de la musique (touche Select / touche M) ----------
+// Une note du thème = une noire, donc une double croche = un quart de la durée d'une note du thème.
+// Les jingles suivent donc le tempo courant du thème ; un plancher évite qu'ils deviennent
+// trop brefs pour être perçus quand le tempo est très rapide (tableaux avancés, grille presque vide).
+const JINGLE_MIN_SIXTEENTH = 0.09; // secondes
+const JINGLE_MUTE_NOTES = [130.81, 130.81];   // coupure : do, do
+const JINGLE_UNMUTE_NOTES = [130.81, 196.00]; // reprise : do, sol
+
+function toggleMusic() {
+  musicEnabled = !musicEnabled;
+  const notes = musicEnabled ? JINGLE_UNMUTE_NOTES : JINGLE_MUTE_NOTES;
+  const sixteenth = Math.max(getThemeNoteDuration() / 4, JINGLE_MIN_SIXTEENTH);
+  notes.forEach((freq, i) => {
+    // 0.85 : même articulation que les notes du thème (la note retombe avant la suivante,
+    // ce qui distingue bien les deux "do" consécutifs)
+    playNote(freq, sixteenth * 0.85, i * sixteenth);
+  });
+  if (musicEnabled) {
+    // À la reprise, le thème attend la fin du jingle avant de repartir, sans chevauchement
+    musicTimer = notes.length * sixteenth;
   }
 }
 
@@ -987,8 +1016,8 @@ document.addEventListener('keydown', e => {
   if (e.key.toLowerCase() === 'p' && !gameOver) {
     paused = !paused;
   }
-  if (e.key.toLowerCase() === 'm') {
-    musicEnabled = !musicEnabled;
+  if (e.key.toLowerCase() === 'm' && !e.repeat) {
+    toggleMusic();
   }
 });
 document.addEventListener('keyup', e => {
@@ -1038,7 +1067,7 @@ function bindTapToggle(id, action) {
   el.addEventListener('touchend', trigger, { passive: false });
   el.addEventListener('mousedown', trigger);
 }
-bindTapToggle('touchSelect', () => { musicEnabled = !musicEnabled; });
+bindTapToggle('touchSelect', toggleMusic);
 bindTapToggle('touchStart', () => { if (!gameOver) paused = !paused; });
 
 document.getElementById('restartBtn').addEventListener('click', () => {
