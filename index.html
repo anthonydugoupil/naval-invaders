@@ -386,7 +386,6 @@
     <button id="quitBtn">Quitter</button>
     
     <p style="margin-top: 32px; margin-bottom: 0; font-size: 12px; opacity: 0.7;">Crédits : Claude & Anthony du Goupil.</p>
-    <p style="margin-top: 4px; margin-bottom: 0; font-size: 10px; opacity: 0.5;">build-2026-09-17-L</p>
   </div>
 </div>
 
@@ -1643,14 +1642,15 @@ try {
 }
 
 // Enregistrement du service worker (fonctionnement hors-ligne, installabilité de la PWA)
+// Si l'enregistrement échoue (navigation privée, navigateur limité...), le jeu fonctionne
+// normalement, simplement sans mode hors-ligne : on n'affiche rien au joueur, seulement
+// une trace dans la console pour le débogage.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('service-worker.js')
       .then(() => { console.log('Service worker enregistré avec succès'); })
-      .catch((err) => { alert('Erreur service worker : ' + err.name + ' - ' + err.message); });
+      .catch((err) => { console.warn('Service worker non enregistré :', err.name, err.message); });
   });
-} else {
-  alert('API service worker indisponible dans ce navigateur/contexte.');
 }
 
 </script>

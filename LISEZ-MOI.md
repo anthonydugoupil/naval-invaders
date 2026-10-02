@@ -47,3 +47,46 @@ installer le jeu comme une vraie application, avec son icône et sans barre d'ad
 - Le meilleur score se sauvegarde via `localStorage`, propre à chaque appareil/navigateur.
 - L'orientation reste verrouillée en portrait ; en paysage, un message invite à tourner
   le téléphone.
+
+## Publier une mise à jour (à ne pas oublier)
+
+Le service worker sert en priorité la copie enregistrée sur l'appareil. Après chaque
+modification du jeu :
+
+1. Ouvre `service-worker.js` et change le numéro de version sur la première ligne
+   (`naval-invaders-v6` devient `naval-invaders-v7`, puis `v8`, etc.).
+2. Mets en ligne tous les fichiers modifiés (le service worker et le jeu ensemble).
+
+Sans ce changement de numéro, les personnes qui ont déjà ouvert le jeu risquent de
+garder l'ancienne version, parfois très longtemps. Une fois la mise à jour publiée,
+il faut ouvrir le jeu une première fois (qui télécharge la nouvelle version en
+arrière-plan), puis une seconde fois pour qu'elle soit effectivement utilisée.
+
+Pour savoir quelle version est en cache sur un appareil : Chrome sur ordinateur →
+F12 → onglet « Application » → « Cache Storage » (le nom du cache est le numéro de version).
+
+## Vérifier le mode hors-ligne (sur la version en ligne, pas sur une copie téléchargée)
+
+1. Ouvre l'adresse du jeu dans Chrome, avec du réseau, et laisse la page se charger
+   complètement. Recharge-la une fois.
+2. Active le mode avion (ou coupe le Wi-Fi et les données mobiles).
+3. Rouvre le jeu depuis l'icône de l'écran d'accueil, ou en tapant à nouveau l'adresse.
+   Il doit se lancer et se jouer normalement.
+
+Sur ordinateur, même test : F12 → « Application » → « Service Workers » → cocher « Offline »,
+puis recharger la page. Le même onglet, rubrique « Manifest », indique si Chrome juge
+l'application installable et détaille les problèmes éventuels.
+
+## Si l'installation échoue sur Android (« Installer » → erreur)
+
+Sur Chrome Android, deux choses différentes se cachent derrière le menu :
+
+- « Créer un raccourci » : un simple favori sur l'écran d'accueil. Il ouvre le jeu dans
+  Chrome, avec sa barre d'adresse.
+- « Installer » : une vraie application. Chrome la fabrique via les services Google Play,
+  ce qui suppose que le Play Store soit accessible sur l'appareil.
+
+Si l'installation échoue alors que le raccourci fonctionne, les pistes à vérifier côté
+téléphone sont : le Play Store s'ouvre et se met à jour normalement, Google Play Services
+et Chrome sont à jour, il reste de la place de stockage, et l'essai est refait avec une
+autre connexion (Wi-Fi ou données mobiles).
