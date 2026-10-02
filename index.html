@@ -573,12 +573,11 @@ function updateMusic(dt) {
 // Les jingles suivent donc le tempo courant du thème ; un plancher évite qu'ils deviennent
 // trop brefs pour être perçus quand le tempo est très rapide (tableaux avancés, grille presque vide).
 const JINGLE_MIN_SIXTEENTH = 0.09; // secondes
-const JINGLE_MUTE_NOTES = [130.81, 130.81];   // coupure : do, do
-const JINGLE_UNMUTE_NOTES = [130.81, 196.00]; // reprise : do, sol
+const JINGLE_NOTES = [130.81, 130.81]; // même jingle à la coupure et à la reprise : do, do
 
 function toggleMusic() {
   musicEnabled = !musicEnabled;
-  const notes = musicEnabled ? JINGLE_UNMUTE_NOTES : JINGLE_MUTE_NOTES;
+  const notes = JINGLE_NOTES;
   const sixteenth = Math.max(getThemeNoteDuration() / 4, JINGLE_MIN_SIXTEENTH);
   notes.forEach((freq, i) => {
     // 0.85 : même articulation que les notes du thème (la note retombe avant la suivante,
