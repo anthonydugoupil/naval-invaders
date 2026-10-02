@@ -1,12 +1,12 @@
-const CACHE_NAME = 'naval-invaders-v7';
-// IMPORTANT : à chaque modification du jeu, changer ce numéro de version (v7 -> v8, etc.),
+const CACHE_NAME = 'naval-invaders-v8';
+// IMPORTANT : à chaque modification du jeu, changer ce numéro de version (v8 -> v9, etc.),
 // sinon les joueurs qui ont déjà ouvert le jeu continueront de recevoir l'ancienne copie.
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 // Installation : met en cache les fichiers essentiels au jeu.
