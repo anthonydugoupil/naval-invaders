@@ -54,16 +54,20 @@ Le service worker sert en priorité la copie enregistrée sur l'appareil. Après
 modification du jeu :
 
 1. Ouvre `service-worker.js` et change le numéro de version sur la première ligne
-   (`naval-invaders-v6` devient `naval-invaders-v7`, puis `v8`, etc.).
-2. Mets en ligne tous les fichiers modifiés (le service worker et le jeu ensemble).
+   (`naval-invaders-v7` devient `naval-invaders-v8`, puis `v9`, etc.).
+2. Dans `index.html`, change le repère de build affiché en bas de l'écran titre
+   (de la forme `build-AAAA-MM-JJ-X`), pour pouvoir constater à l'œil nu quelle version
+   tourne sur un appareil.
+3. Mets en ligne tous les fichiers modifiés (le service worker et le jeu ensemble).
 
 Sans ce changement de numéro, les personnes qui ont déjà ouvert le jeu risquent de
 garder l'ancienne version, parfois très longtemps. Une fois la mise à jour publiée,
 il faut ouvrir le jeu une première fois (qui télécharge la nouvelle version en
 arrière-plan), puis une seconde fois pour qu'elle soit effectivement utilisée.
 
-Pour savoir quelle version est en cache sur un appareil : Chrome sur ordinateur →
-F12 → onglet « Application » → « Cache Storage » (le nom du cache est le numéro de version).
+Pour savoir quelle version tourne sur un appareil : regarde le repère de build en bas de
+l'écran titre. Sur ordinateur, le cache en place est aussi visible dans Chrome → F12 →
+onglet « Application » → « Cache Storage ».
 
 ## Vérifier le mode hors-ligne (sur la version en ligne, pas sur une copie téléchargée)
 
