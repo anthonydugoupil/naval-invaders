@@ -5,6 +5,8 @@
 - `manifest.json` — la carte d'identité de l'application (nom, icônes, orientation portrait)
 - `service-worker.js` — permet le fonctionnement hors-ligne et l'installation
 - `icon-192.png` et `icon-512.png` — les deux icônes de l'application (192px et 512px)
+- `og-image.png` — l'image d'aperçu (1200x630) affichée quand le lien du jeu est partagé ; elle ne sert
+  qu'aux aperçus de liens, le jeu ne la charge pas et le service worker ne la met pas en cache
 
 ## Important : il faut un vrai serveur, pas un double-clic
 
@@ -60,7 +62,7 @@ Le service worker sert en priorité la copie enregistrée sur l'appareil. Après
 modification du jeu :
 
 1. Ouvre `service-worker.js` et change le numéro de version sur la première ligne
-   (`naval-invaders-v8` devient `naval-invaders-v9`, puis `v10`, etc.).
+   (`naval-invaders-v9` devient `naval-invaders-v10`, puis `v11`, etc.).
 2. Dans `index.html`, change le repère de build affiché en bas de l'écran titre
    (de la forme `build-AAAA-MM-JJ-X`), pour pouvoir constater à l'œil nu quelle version
    tourne sur un appareil.
@@ -107,3 +109,16 @@ Si l'installation échoue alors que le raccourci fonctionne, les pistes à véri
 téléphone sont : le Play Store s'ouvre et se met à jour normalement, Google Play Services
 et Chrome sont à jour, il reste de la place de stockage, et l'essai est refait avec une
 autre connexion (Wi-Fi ou données mobiles).
+
+## Aperçu du lien quand on le partage
+
+Le début de `index.html` contient des balises (`og:title`, `og:description`, `og:image`...) qui
+indiquent aux messageries le titre, la description et l'image à afficher sous le lien. L'image
+est `og-image.png`, à déposer à la racine du dépôt comme les autres fichiers. Les adresses de ces
+balises sont complètes (elles commencent par `https://anthonydugoupil.github.io/naval-invaders/`) ;
+c'est obligatoire, une adresse relative n'est pas comprise par les messageries.
+
+Les messageries gardent l'aperçu en mémoire : un lien déjà partagé peut continuer à s'afficher
+sans image un certain temps, même après la mise en ligne. Pour tester, partage le lien à soi-même,
+ou ajoute un paramètre à l'adresse (par exemple `...naval-invaders/?v=2`) pour forcer une nouvelle lecture.
+Pour Facebook et Messenger, l'outil « Sharing Debugger » de Facebook permet de rafraîchir l'aperçu.
